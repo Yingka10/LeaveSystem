@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>批次詳細審核</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 800px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* 卡片樣式 */
+        .leave-card {
+            background: white;
+            border-left: 5px solid #007bff;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between; /* 左右排版 */
+            align-items: center;
+        }
+        .info h3 { margin: 0 0 5px 0; color: #333; }
+        .info p { margin: 5px 0; color: #666; }
+        .reason { background: #eee; padding: 8px; border-radius: 4px; margin-top: 5px; display: inline-block; }
+
+        /* 按鈕群組 */
+        .actions { display: flex; gap: 10px; }
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 14px;}
+        .approve { background-color: #28a745; }
+        .reject { background-color: #dc3545; }
+        .back-btn { background-color: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>已選取假單 - 詳細審核模式</h2>
+            <a href="/leaves" class="back-btn">放棄並返回列表</a>
+        </div>
+
+        <p style="color: #666;">您正在檢視剛剛勾選的 <span th:text="${selectedLeaves.size()}"></span> 筆假單。請逐一進行審核。</p>
+
+        <div th:each="leave : ${selectedLeaves}" class="leave-card">
+            
+            <div class="info">
+                <h3 th:text="${leave.studentName} + ' (' + ${leave.studentId} + ')'"></h3>
+                <p><strong>單號：</strong><span th:text="${leave.id}"></span> | <strong>日期：</strong><span th:text="${leave.date}"></span></p>
+                <p><strong>假別：</strong><span th:text="${leave.type}"></span></p>
+                <div class="reason">
+                    <strong>事由：</strong><span th:text="${leave.reason}"></span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <form th:action="@{/leaves/{id}/audit(id=${leave.id})}" method="post">
+                    <button type="submit" name="action" value="approve" class="btn approve">通過</button>
+                    <button type="submit" name="action" value="reject" class="btn reject">不通過</button>
+                </form>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(selectedLeaves)}" style="text-align: center; margin-top: 50px;">
+            <h3>沒有選取任何資料</h3>
+        </div>
+    </div>
+</body>
+</html>

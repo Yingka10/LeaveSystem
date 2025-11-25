@@ -21,9 +21,9 @@ public class LeaveController {
     private static List<AuditLog> auditLogs = new ArrayList<>();
 
     static {
-        leaveDb.add(new LeaveRequest("L001", "周佳穎", "II2403508", "事假", "2025-12-01", "家裡有事", "待審核", "jjjj65034666@gmail.com"));
-        leaveDb.add(new LeaveRequest("L002", "王小明", "II2400001", "病假", "2025-12-02", "感冒發燒", "待審核", "test2@example.com"));
-        leaveDb.add(new LeaveRequest("L003", "陳大文", "II2400002", "公假", "2025-12-03", "程式競賽", "待審核", "test3@example.com"));
+        leaveDb.add(new LeaveRequest("L001", "周佳穎", "112403508", "事假", "2025-12-01", "家裡有事", "待審核", "jjjj65034666@gmail.com"));
+        leaveDb.add(new LeaveRequest("L002", "王小明", "112400001", "病假", "2025-12-02", "感冒發燒", "待審核", "test2@example.com"));
+        leaveDb.add(new LeaveRequest("L003", "陳大文", "112400002", "公假", "2025-12-03", "程式競賽", "待審核", "test3@example.com"));
     }
 
 
@@ -76,15 +76,37 @@ public class LeaveController {
         return "redirect:/audit-logs"; 
     }
 
-    // 批次審核
+    // 批次處理
     @PostMapping("/leaves/batch")
-    public String auditBatch(@RequestParam(required = false) List<String> ids, @RequestParam String action) {
-        if (ids != null && !ids.isEmpty()) {
+    public String auditBatch(@RequestParam(required = false) List<String> ids, 
+                             @RequestParam String action, 
+                             Model model) {
+        
+        // 防呆：如果沒選任何東西就按按鈕，直接回列表
+        if (ids == null || ids.isEmpty()) {
+            return "redirect:/leaves";
+        }
+
+        // 情況 A：如果是按「檢視選取明細」 (New Feature)
+        if ("review".equals(action)) {
+            // 找出所有被勾選的 LeaveRequest 物件
+            List<LeaveRequest> selectedLeaves = new ArrayList<>();
             for (String id : ids) {
-                LeaveRequest leave = leaveDb.stream().filter(l -> l.getId().equals(id)).findFirst().orElse(null);
-                if (leave != null) {
-                    processAudit(leave, action);
-                }
+                leaveDb.stream()
+                        .filter(l -> l.getId().equals(id))
+                        .findFirst()
+                        .ifPresent(selectedLeaves::add);
+            }
+            // 把這些假單丟給前端 model
+            model.addAttribute("selectedLeaves", selectedLeaves);
+            return "review"; //導向 review.html
+        }
+
+        // 情況 B：如果是按「直接全部通過/不通過」 (Existing Feature)
+        for (String id : ids) {
+            LeaveRequest leave = leaveDb.stream().filter(l -> l.getId().equals(id)).findFirst().orElse(null);
+            if (leave != null) {
+                processAudit(leave, action); // 呼叫原本寫好的審核函式
             }
         }
         return "redirect:/audit-logs";
