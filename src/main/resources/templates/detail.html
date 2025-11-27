@@ -100,8 +100,11 @@
 
         <div class="actions">
             <form th:if="${leave.status == '待審核'}" th:action="@{/leaves/{id}/audit(id=${leave.id})}" method="post" style="display: inline;">
-                <button type="submit" name="action" value="approve" class="approve">通過審核</button>
-                <button type="submit" name="action" value="reject" class="reject">駁回申請</button>
+                <button type="submit" name="action" value="approve" class="approve" 
+                        onclick="return confirm('確定要「通過」此假單並寄送通知信嗎？')">通過審核</button>
+                
+                <button type="submit" name="action" value="reject" class="reject" 
+                        onclick="return confirm('確定要「駁回」此假單並寄送通知信嗎？')">駁回申請</button>
             </form>
             <br><br>
             <a href="/leaves" class="back">返回列表</a>

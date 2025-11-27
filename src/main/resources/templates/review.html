@@ -31,7 +31,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2>已選取假單 - 詳細審核模式</h2>
+            <h2>檢視選取假單並審核</h2>
             <a href="/leaves" class="back-btn">放棄並返回列表</a>
         </div>
 
@@ -79,11 +79,13 @@
 
             <div class="actions" style="width: 100%; text-align: right; border-top: none; padding-top: 0;">
                 <form th:action="@{/leaves/{id}/audit(id=${leave.id})}" method="post">
-                    <button type="submit" name="action" value="approve" class="btn approve">通過</button>
-                    <button type="submit" name="action" value="reject" class="btn reject">不通過</button>
+                    <button type="submit" name="action" value="approve" class="btn approve"
+                            onclick="return confirm('確定要「通過」此假單並寄送通知信嗎？')">通過</button>
+                    
+                    <button type="submit" name="action" value="reject" class="btn reject"
+                            onclick="return confirm('確定要「不通過」此假單並寄送通知信嗎？')">不通過</button>
                 </form>
             </div>
-        </div>
 
         <div th:if="${#lists.isEmpty(selectedLeaves)}" style="text-align: center; margin-top: 50px;">
             <h3>沒有選取任何資料</h3>

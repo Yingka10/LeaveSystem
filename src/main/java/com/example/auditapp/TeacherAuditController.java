@@ -6,6 +6,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,49 +90,56 @@ public class TeacherAuditController {
 
     // 單筆審核
     @PostMapping("/leaves/{id}/audit")
-    public String auditSingle(@PathVariable String id, @RequestParam String action) {
+    public String auditSingle(@PathVariable String id, 
+                              @RequestParam String action,
+                              RedirectAttributes redirectAttributes) { 
         StudentLeaveForm leave = leaveDb.stream().filter(l -> l.getId().equals(id)).findFirst().orElse(null);
+        
         if (leave != null) {
             processAudit(leave, action);
+            // 設定快閃訊息 (Flash Attribute)，只會在下一次頁面顯示一次
+            redirectAttributes.addFlashAttribute("message", "單號 " + id + " 審核已完成，並已寄送通知信！");
         }
-        // 審核完直接跳轉到紀錄頁面 (或留列表頁也可)
-        return "redirect:/audit-logs"; 
+        
+        return "redirect:/leaves"; // 導回列表
     }
 
     // 批次處理
     @PostMapping("/leaves/batch")
     public String auditBatch(@RequestParam(required = false) List<String> ids, 
                              @RequestParam String action, 
-                             Model model) {
+                             Model model,
+                             RedirectAttributes redirectAttributes) { // 加入這個參數
         
-        // 防呆：如果沒選任何東西就按按鈕，直接回列表
         if (ids == null || ids.isEmpty()) {
+             // 如果後端擋下，也給個錯誤訊息
+            redirectAttributes.addFlashAttribute("error", "請至少勾選一筆！");
             return "redirect:/leaves";
         }
 
-        // 情況 A：如果是按「檢視選取明細」 (New Feature)
+        // 情況 A：檢視選取明細 (這個不用跳通知，直接導向頁面)
         if ("review".equals(action)) {
-            // 找出所有被勾選的 LeaveRequest 物件
             List<StudentLeaveForm> selectedLeaves = new ArrayList<>();
             for (String id : ids) {
-                leaveDb.stream()
-                        .filter(l -> l.getId().equals(id))
-                        .findFirst()
-                        .ifPresent(selectedLeaves::add);
+                leaveDb.stream().filter(l -> l.getId().equals(id)).findFirst().ifPresent(selectedLeaves::add);
             }
-            // 把這些假單丟給前端 model
             model.addAttribute("selectedLeaves", selectedLeaves);
-            return "review"; //導向 review.html
+            return "review";
         }
 
-        // 情況 B：如果是按「直接全部通過/不通過」 (Existing Feature)
+        // 情況 B：直接全部通過/不通過
         for (String id : ids) {
             StudentLeaveForm leave = leaveDb.stream().filter(l -> l.getId().equals(id)).findFirst().orElse(null);
             if (leave != null) {
-                processAudit(leave, action); // 呼叫原本寫好的審核函式
+                processAudit(leave, action);
             }
         }
-        return "redirect:/audit-logs";
+        
+        // 設定成功訊息
+        String msgAction = "approve".equals(action) ? "通過" : "不通過";
+        redirectAttributes.addFlashAttribute("message", "已將選取的 " + ids.size() + " 筆假單全部" + msgAction + "，並已寄送通知信！");
+
+        return "redirect:/leaves";
     }
 
     // --- 封裝好的處理邏輯：更新狀態 + 寫紀錄 + 寄信 ---
